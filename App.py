@@ -180,8 +180,14 @@ class Aplicacion:
         datos = self.obtener_campos()
 
         try:
+            # Llamar a la función para actualizar el registro en la base de datos
             actualizar_registro_db(record_id, **datos)
             messagebox.showinfo("Éxito", "Registro actualizado exitosamente")
+
+            # Limpiar los campos de entrada después de la actualización
+            for entry in self.entries.values():
+                entry.delete(0, tk.END)
+
             self.ver_registros()  # Refrescar la vista con los registros actualizados
         except Exception as e:
             messagebox.showerror("Error", f"Error al actualizar el registro: {e}")
@@ -203,89 +209,123 @@ class Aplicacion:
             print(f"Error al eliminar el registro: {e}")
 
 
-# Funciones para manejar la base de datos
-def conectar_db():
-    return pymysql.connect(host='localhost', user='root', password='curso', database='encuestas')
+# Funciones para interactuar con la base de datos
 
-
-def obtener_registros_db():
-    db = conectar_db()
-    cursor = db.cursor()
-    cursor.execute("SELECT * FROM ENCUESTA")
-    registros = cursor.fetchall()
-    db.close()
-    return registros
-
-
-def obtener_registro_por_id(record_id):
-    db = conectar_db()
-    cursor = db.cursor()
-    cursor.execute("SELECT * FROM ENCUESTA WHERE idEncuesta = %s", (record_id,))
-    registro = cursor.fetchone()
-    db.close()
-
-    # Crear un diccionario con los resultados
-    if registro:
-        return {
-            "edad": registro[1],  # Suponiendo que la columna 'edad' está en la segunda posición
-            "sexo": registro[2],  # Suponiendo que la columna 'sexo' está en la tercera posición
-            "bebidas": registro[3],
-            "cervezas": registro[4],
-            "bebidas_fs": registro[5],
-            "bebidas_dest": registro[6],
-            "vinos": registro[7],
-            "perdidas": registro[8],
-            "diversion": registro[9],
-            "digestivos": registro[10],
-            "tension": registro[11],
-            "dolor": registro[12]
-        }
-    return None
+def obtener_conexion_db():
+    return pymysql.connect(host="localhost", user="root", password="curso", database="encuestas")
 
 
 def obtener_siguiente_id():
-    db = conectar_db()
-    cursor = db.cursor()
-    cursor.execute("SELECT MAX(idEncuesta) FROM ENCUESTA")
-    max_id = cursor.fetchone()[0]
-    db.close()
-    return max_id + 1 if max_id else 1
+    try:
+        conn = obtener_conexion_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT MAX(idEncuesta) FROM ENCUESTA")
+        max_id = cursor.fetchone()[0]
+        return max_id + 1 if max_id else 1
+    except Exception as e:
+        print(f"Error al obtener el siguiente ID: {e}")
+        return 1
+    finally:
+        conn.close()
 
 
-def agregar_registro_db(id, edad, sexo, bebidas, cervezas, bebidas_fs, bebidas_dest, vinos, perdidas,
-                        diversion, digestivos, tension, dolor):
-    db = conectar_db()
-    cursor = db.cursor()
-    query = "INSERT INTO ENCUESTA (idEncuesta, edad, sexo, bebidas, cervezas, bebidas_fs, bebidas_dest, vinos, perdidas, diversion, digestivos, tension, dolor) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-    cursor.execute(query, (
-    id, edad, sexo, bebidas, cervezas, bebidas_fs, bebidas_dest, vinos, perdidas, diversion, digestivos, tension,
-    dolor))
-    db.commit()
-    db.close()
+def agregar_registro_db(id, edad, sexo, bebidas, cervezas, bebidas_fs, bebidas_dest, vinos, perdidas, diversion,
+                         digestivos, tension, dolor):
+    try:
+        conn = obtener_conexion_db()
+        cursor = conn.cursor()
+        query = """
+            INSERT INTO ENCUESTA (idEncuesta, edad, Sexo, BebidasSemana, CervezasSemana, BebidasFinSemana, 
+                                  BebidasDestiladasSemana, VinosSemana, PerdidasControl, DiversionDependenciaAlcohol, 
+                                  ProblemasDigestivos, TensionAlta, DolorCabeza)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """
+        cursor.execute(query, (id, edad, sexo, bebidas, cervezas, bebidas_fs, bebidas_dest, vinos, perdidas, diversion,
+                               digestivos, tension, dolor))
+        conn.commit()
+    except Exception as e:
+        print(f"Error al agregar el registro: {e}")
+    finally:
+        conn.close()
 
 
-def actualizar_registro_db(id, edad, sexo, bebidas, cervezas, bebidas_fs, bebidas_dest, vinos, perdidas,
-                           diversion, digestivos, tension, dolor):
-    db = conectar_db()
-    cursor = db.cursor()
-    query = """UPDATE ENCUESTA SET edad = %s, sexo = %s, bebidas = %s, cervezas = %s, bebidas_fs = %s, 
-               bebidas_dest = %s, vinos = %s, perdidas = %s, diversion = %s, digestivos = %s, 
-               tension = %s, dolor = %s WHERE idEncuesta = %s"""
-    cursor.execute(query, (edad, sexo, bebidas, cervezas, bebidas_fs, bebidas_dest, vinos, perdidas, diversion,
-                           digestivos, tension, dolor, id))
-    db.commit()
-    db.close()
+def obtener_registros_db():
+    try:
+        conn = obtener_conexion_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM ENCUESTA")
+        registros = cursor.fetchall()
+        return registros
+    except Exception as e:
+        print(f"Error al obtener los registros: {e}")
+        return []
+    finally:
+        conn.close()
+
+
+def obtener_registro_por_id(id):
+    try:
+        conn = obtener_conexion_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM ENCUESTA WHERE idEncuesta = %s", (id,))
+        registro = cursor.fetchone()
+        if registro:
+            return {
+                "edad": registro[1],
+                "sexo": registro[2],
+                "bebidas": registro[3],
+                "cervezas": registro[4],
+                "bebidas_fs": registro[5],
+                "bebidas_dest": registro[6],
+                "vinos": registro[7],
+                "perdidas": registro[8],
+                "diversion": registro[9],
+                "digestivos": registro[10],
+                "tension": registro[11],
+                "dolor": registro[12]
+            }
+        return None
+    except Exception as e:
+        print(f"Error al obtener el registro por ID: {e}")
+        return None
+    finally:
+        conn.close()
+
+
+def actualizar_registro_db(id, edad, sexo, bebidas, cervezas, bebidas_fs, bebidas_dest, vinos, perdidas, diversion,
+                            digestivos, tension, dolor):
+    try:
+        conn = obtener_conexion_db()
+        cursor = conn.cursor()
+        query = """
+            UPDATE ENCUESTA SET edad = %s, Sexo = %s, BebidasSemana = %s, CervezasSemana = %s, BebidasFinSemana = %s, 
+                BebidasDestiladasSemana = %s, VinosSemana = %s, PerdidasControl = %s, DiversionDependenciaAlcohol = %s,
+                ProblemasDigestivos = %s, TensionAlta = %s, DolorCabeza = %s
+            WHERE idEncuesta = %s
+        """
+        cursor.execute(query, (edad, sexo, bebidas, cervezas, bebidas_fs, bebidas_dest, vinos, perdidas, diversion,
+                               digestivos, tension, dolor, id))
+        conn.commit()
+    except Exception as e:
+        print(f"Error al actualizar el registro: {e}")
+    finally:
+        conn.close()
 
 
 def eliminar_registro_db(id):
-    db = conectar_db()
-    cursor = db.cursor()
-    cursor.execute("DELETE FROM ENCUESTA WHERE idEncuesta = %s", (id,))
-    db.commit()
-    db.close()
+    try:
+        conn = obtener_conexion_db()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM ENCUESTA WHERE idEncuesta = %s", (id,))
+        conn.commit()
+    except Exception as e:
+        print(f"Error al eliminar el registro: {e}")
+    finally:
+        conn.close()
 
 
-# Configuración de la ventana principal
-root = tk.Tk()
-app = Aplicacion(root)
-root.mainloop()
+# Crear ventana principal y ejecutar la aplicación
+if __name__ == "__main__":
+    raiz = tk.Tk()
+    app = Aplicacion(raiz)
+    raiz.mainloop()
