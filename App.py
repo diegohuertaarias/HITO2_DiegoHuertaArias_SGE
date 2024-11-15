@@ -230,9 +230,31 @@ class Aplicacion:
 
     def crear_actualizar_excel(self):
         try:
+            # Solicitar criterios de filtro
+            filtro_edad = simpledialog.askstring("Filtro", "Ingrese la edad máxima (o deje en blanco para todos):")
+            filtro_sexo = simpledialog.askstring("Filtro", "Ingrese el sexo (o deje en blanco para todos):")
+            filtro_bebidas = simpledialog.askstring("Filtro",
+                                                    "Ingrese el número máximo de bebidas semanales (o deje en blanco para todos):")
+
             registros = obtener_registros_db()
             if not registros:
                 messagebox.showwarning("Sin Registros", "No se encontraron registros en la base de datos.")
+                return
+
+            # Filtrar registros
+            registros_filtrados = []
+            for registro in registros:
+                edad_valida = not filtro_edad or (registro[1] is not None and int(registro[1]) <= int(filtro_edad))
+                sexo_valido = not filtro_sexo or (
+                            registro[2] is not None and registro[2].lower() == filtro_sexo.lower())
+                bebidas_validas = not filtro_bebidas or (
+                            registro[3] is not None and int(registro[3]) <= int(filtro_bebidas))
+
+                if edad_valida and sexo_valido and bebidas_validas:
+                    registros_filtrados.append(registro)
+
+            if not registros_filtrados:
+                messagebox.showwarning("Sin Registros", "No se encontraron registros que coincidan con los filtros.")
                 return
 
             # Crear o cargar el archivo Excel
@@ -249,8 +271,8 @@ class Aplicacion:
             # Limpiar las filas existentes
             ws.delete_rows(2, ws.max_row)
 
-            # Añadir los registros
-            for registro in registros:
+            # Añadir los registros filtrados
+            for registro in registros_filtrados:
                 ws.append(registro)
 
             # Guardar el archivo
@@ -306,8 +328,8 @@ def agregar_registro_db(id, edad, sexo, bebidas, cervezas, bebidas_fs, bebidas_d
         conn = obtener_conexion_db()
         cursor = conn.cursor()
         query = """
-            INSERT INTO ENCUESTA (idEncuesta, edad, Sexo, BebidasSemana, CervezasSemana, BebidasFinSemana, 
-                                  BebidasDestiladasSemana, VinosSemana, PerdidasControl, DiversionDependenciaAlcohol, 
+            INSERT INTO ENCUESTA (idEncuesta, edad, Sexo, BebidasSemana, CervezasSemana, BebidasFinSemana,
+                                  BebidasDestiladasSemana, VinosSemana, PerdidasControl, DiversionDependenciaAlcohol,
                                   ProblemasDigestivos, TensionAlta, DolorCabeza)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
@@ -366,9 +388,9 @@ def actualizar_registro_db(id, edad, sexo, bebidas, cervezas, bebidas_fs, bebida
         conn = obtener_conexion_db()
         cursor = conn.cursor()
         query = """
-            UPDATE ENCUESTA SET edad = %s, Sexo = %s, BebidasSemana = %s, CervezasSemana = %s, BebidasFinSemana = %s, 
+            UPDATE ENCUESTA SET edad = %s, Sexo = %s, BebidasSemana = %s, CervezasSemana = %s, BebidasFinSemana = %s,
                 BebidasDestiladasSemana = %s, VinosSemana = %s, PerdidasControl = %s, DiversionDependenciaAlcohol = %s,
-                ProblemasDigestivos = %s, TensionAlta = %s, DolorCabeza = %s
+                Problemasdigestivos = %s, TensionAlta = %s, DolorCabeza = %s
             WHERE idEncuesta = %s
         """
         cursor.execute(query, (edad, sexo, bebidas, cervezas, bebidas_fs, bebidas_dest, vinos, perdidas, diversion,
