@@ -9,6 +9,8 @@ class Aplicacion:
     def __init__(self, raiz):
         self.raiz = raiz
         self.raiz.title("Encuesta de Salud y Consumo de Alcohol")
+        self.raiz.geometry("800x600")
+        self.raiz.configure(bg="#f0f0f0")
 
         # Menú
         menu_barra = tk.Menu(raiz)
@@ -36,30 +38,30 @@ class Aplicacion:
 
         self.entries = {}
         for idx, (texto, var) in enumerate(campos):
-            etiqueta = tk.Label(raiz, text=texto + ":")
-            etiqueta.grid(row=idx, column=0, sticky="w", padx=5, pady=5)
-            entrada = tk.Entry(raiz)
-            entrada.grid(row=idx, column=1, sticky="ew", padx=5, pady=5)
+            etiqueta = tk.Label(raiz, text=texto + ":", font=("Arial", 12), bg="#f0f0f0")
+            etiqueta.grid(row=idx, column=0, sticky="w", padx=10, pady=5)
+            entrada = tk.Entry(raiz, font=("Arial", 12))
+            entrada.grid(row=idx, column=1, sticky="ew", padx=10, pady=5)
             self.entries[var] = entrada
 
         # Botones
-        self.boton_agregar = tk.Button(raiz, text="Agregar Registro", command=self.agregar_registro)
-        self.boton_agregar.grid(row=len(campos), column=0, sticky="ew", padx=5, pady=5)
+        self.boton_agregar = tk.Button(raiz, text="Agregar Registro", command=self.agregar_registro, bg="#4CAF50", fg="white", font=("Arial", 12))
+        self.boton_agregar.grid(row=len(campos), column=0, sticky="ew", padx=10, pady=5)
 
-        self.boton_ver = tk.Button(raiz, text="Ver Registros", command=self.ver_registros)
-        self.boton_ver.grid(row=len(campos), column=1, sticky="ew", padx=5, pady=5)
+        self.boton_ver = tk.Button(raiz, text="Ver Registros", command=self.ver_registros, bg="#2196F3", fg="white", font=("Arial", 12))
+        self.boton_ver.grid(row=len(campos), column=1, sticky="ew", padx=10, pady=5)
 
-        self.boton_actualizar = tk.Button(raiz, text="Actualizar Registro", command=self.actualizar_registro)
-        self.boton_actualizar.grid(row=len(campos) + 1, column=0, sticky="ew", padx=5, pady=5)
+        self.boton_actualizar = tk.Button(raiz, text="Actualizar Registro", command=self.actualizar_registro, bg="#FFC107", fg="white", font=("Arial", 12))
+        self.boton_actualizar.grid(row=len(campos) + 1, column=0, sticky="ew", padx=10, pady=5)
 
-        self.boton_eliminar = tk.Button(raiz, text="Eliminar Registro", command=self.eliminar_registro)
-        self.boton_eliminar.grid(row=len(campos) + 1, column=1, sticky="ew", padx=5, pady=5)
+        self.boton_eliminar = tk.Button(raiz, text="Eliminar Registro", command=self.eliminar_registro, bg="#F44336", fg="white", font=("Arial", 12))
+        self.boton_eliminar.grid(row=len(campos) + 1, column=1, sticky="ew", padx=10, pady=5)
 
-        self.boton_excel = tk.Button(raiz, text="Crear/Actualizar Excel", command=self.crear_actualizar_excel)
-        self.boton_excel.grid(row=len(campos) + 2, column=0, columnspan=2, sticky="ew", padx=5, pady=5)
+        self.boton_excel = tk.Button(raiz, text="Crear/Actualizar Excel", command=self.crear_actualizar_excel, bg="#9C27B0", fg="white", font=("Arial", 12))
+        self.boton_excel.grid(row=len(campos) + 2, column=0, columnspan=2, sticky="ew", padx=10, pady=5)
 
-        self.boton_graficos = tk.Button(raiz, text="Mostrar Gráficos", command=self.mostrar_graficos)
-        self.boton_graficos.grid(row=len(campos) + 3, column=0, columnspan=2, sticky="ew", padx=5, pady=5)
+        self.boton_graficos = tk.Button(raiz, text="Mostrar Gráficos", command=self.mostrar_graficos, bg="#FF5722", fg="white", font=("Arial", 12))
+        self.boton_graficos.grid(row=len(campos) + 3, column=0, columnspan=2, sticky="ew", padx=10, pady=5)
 
         # Tabla de registros con scroll
         self.tree = ttk.Treeview(raiz,
@@ -68,7 +70,7 @@ class Aplicacion:
                                  show="headings")
         for col in self.tree["columns"]:
             self.tree.heading(col, text=col.capitalize())
-        self.tree.grid(row=len(campos) + 4, column=0, columnspan=2, sticky="nsew", padx=5, pady=5)
+        self.tree.grid(row=len(campos) + 4, column=0, columnspan=2, sticky="nsew", padx=10, pady=5)
 
         # Scrollbar vertical
         scrollbar_vertical = ttk.Scrollbar(raiz, orient="vertical", command=self.tree.yview)
