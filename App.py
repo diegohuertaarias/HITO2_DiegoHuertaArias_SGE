@@ -1,6 +1,8 @@
 import tkinter as tk
-from tkinter import messagebox, ttk
+from tkinter import messagebox, ttk, simpledialog
 import pymysql
+import openpyxl
+import matplotlib.pyplot as plt
 
 
 class Aplicacion:
@@ -53,14 +55,30 @@ class Aplicacion:
         self.boton_eliminar = tk.Button(raiz, text="Eliminar Registro", command=self.eliminar_registro)
         self.boton_eliminar.grid(row=len(campos) + 1, column=1, sticky="ew", padx=5, pady=5)
 
-        # Tabla de registros
+        self.boton_excel = tk.Button(raiz, text="Crear/Actualizar Excel", command=self.crear_actualizar_excel)
+        self.boton_excel.grid(row=len(campos) + 2, column=0, columnspan=2, sticky="ew", padx=5, pady=5)
+
+        self.boton_graficos = tk.Button(raiz, text="Mostrar Gráficos", command=self.mostrar_graficos)
+        self.boton_graficos.grid(row=len(campos) + 3, column=0, columnspan=2, sticky="ew", padx=5, pady=5)
+
+        # Tabla de registros con scroll
         self.tree = ttk.Treeview(raiz,
                                  columns=("ID", "edad", "sexo", "bebidas", "cervezas", "bebidas_fs", "bebidas_dest",
                                           "vinos", "perdidas", "diversion", "digestivos", "tension", "dolor"),
                                  show="headings")
         for col in self.tree["columns"]:
             self.tree.heading(col, text=col.capitalize())
-        self.tree.grid(row=len(campos) + 2, column=0, columnspan=2, sticky="nsew", padx=5, pady=5)
+        self.tree.grid(row=len(campos) + 4, column=0, columnspan=2, sticky="nsew", padx=5, pady=5)
+
+        # Scrollbar vertical
+        scrollbar_vertical = ttk.Scrollbar(raiz, orient="vertical", command=self.tree.yview)
+        scrollbar_vertical.grid(row=len(campos) + 4, column=2, sticky="ns")
+        self.tree.configure(yscrollcommand=scrollbar_vertical.set)
+
+        # Scrollbar horizontal
+        scrollbar_horizontal = ttk.Scrollbar(raiz, orient="horizontal", command=self.tree.xview)
+        scrollbar_horizontal.grid(row=len(campos) + 5, column=0, columnspan=2, sticky="ew")
+        self.tree.configure(xscrollcommand=scrollbar_horizontal.set)
 
         # Hacer la ventana responsive
         raiz.grid_rowconfigure(len(campos), weight=1)
@@ -208,12 +226,64 @@ class Aplicacion:
             messagebox.showerror("Error", f"Error al eliminar el registro: {e}")
             print(f"Error al eliminar el registro: {e}")
 
+    def crear_actualizar_excel(self):
+        try:
+            registros = obtener_registros_db()
+            if not registros:
+                messagebox.showwarning("Sin Registros", "No se encontraron registros en la base de datos.")
+                return
+
+            # Crear o cargar el archivo Excel
+            try:
+                wb = openpyxl.load_workbook("registros.xlsx")
+                ws = wb.active
+            except FileNotFoundError:
+                wb = openpyxl.Workbook()
+                ws = wb.active
+                ws.append(["ID", "Edad", "Sexo", "Bebidas Semanales", "Cervezas Semanales", "Bebidas Fin de Semana",
+                           "Bebidas Destiladas Semana", "Vinos Semana", "Pérdidas Control", "Diversión Dependencia",
+                           "Problemas Digestivos", "Tensión Alta", "Dolor Cabeza"])
+
+            # Limpiar las filas existentes
+            ws.delete_rows(2, ws.max_row)
+
+            # Añadir los registros
+            for registro in registros:
+                ws.append(registro)
+
+            # Guardar el archivo
+            wb.save("registros.xlsx")
+            messagebox.showinfo("Éxito", "Archivo Excel creado/actualizado exitosamente")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al crear/actualizar el archivo Excel: {e}")
+            print(f"Error al crear/actualizar el archivo Excel: {e}")
+
+    def mostrar_graficos(self):
+        try:
+            registros = obtener_registros_db()
+            if not registros:
+                messagebox.showwarning("Sin Registros", "No se encontraron registros en la base de datos.")
+                return
+
+            edades = [registro[1] for registro in registros]
+            bebidas = [registro[3] for registro in registros]
+
+            plt.figure(figsize=(10, 5))
+            plt.scatter(edades, bebidas, c='blue', label='Bebidas Semanales')
+            plt.xlabel('Edad')
+            plt.ylabel('Bebidas Semanales')
+            plt.title('Consumo de Bebidas Semanales por Edad')
+            plt.legend()
+            plt.grid(True)
+            plt.show()
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al mostrar los gráficos: {e}")
+            print(f"Error al mostrar los gráficos: {e}")
 
 # Funciones para interactuar con la base de datos
 
 def obtener_conexion_db():
     return pymysql.connect(host="localhost", user="root", password="curso", database="encuestas")
-
 
 def obtener_siguiente_id():
     try:
@@ -227,7 +297,6 @@ def obtener_siguiente_id():
         return 1
     finally:
         conn.close()
-
 
 def agregar_registro_db(id, edad, sexo, bebidas, cervezas, bebidas_fs, bebidas_dest, vinos, perdidas, diversion,
                          digestivos, tension, dolor):
@@ -248,7 +317,6 @@ def agregar_registro_db(id, edad, sexo, bebidas, cervezas, bebidas_fs, bebidas_d
     finally:
         conn.close()
 
-
 def obtener_registros_db():
     try:
         conn = obtener_conexion_db()
@@ -261,7 +329,6 @@ def obtener_registros_db():
         return []
     finally:
         conn.close()
-
 
 def obtener_registro_por_id(id):
     try:
@@ -291,7 +358,6 @@ def obtener_registro_por_id(id):
     finally:
         conn.close()
 
-
 def actualizar_registro_db(id, edad, sexo, bebidas, cervezas, bebidas_fs, bebidas_dest, vinos, perdidas, diversion,
                             digestivos, tension, dolor):
     try:
@@ -311,7 +377,6 @@ def actualizar_registro_db(id, edad, sexo, bebidas, cervezas, bebidas_fs, bebida
     finally:
         conn.close()
 
-
 def eliminar_registro_db(id):
     try:
         conn = obtener_conexion_db()
@@ -322,7 +387,6 @@ def eliminar_registro_db(id):
         print(f"Error al eliminar el registro: {e}")
     finally:
         conn.close()
-
 
 # Crear ventana principal y ejecutar la aplicación
 if __name__ == "__main__":
